@@ -1,0 +1,28 @@
+{
+  "name": "O Jogo da Vida do Guerreiro Interno",
+  "short_name": "Guerreiro Interno",
+  "description": "Transforme sua vida em uma aventura épica. Desenvolva seu guerreiro interior através de desafios e conquistas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle", "games"],
+  "prefer_related_applications": false
+}
