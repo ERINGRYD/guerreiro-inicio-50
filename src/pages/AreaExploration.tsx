@@ -8,7 +8,8 @@ import { useHero } from '@/contexts/HeroContext';
 import { HeroArea, Journey } from '@/types/hero';
 import { INITIAL_JOURNEYS } from '@/data/initialJourneys';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
+import { JourneyImportDialog } from '@/components/journey/JourneyImportDialog';
 
 const AreaExploration: React.FC = () => {
   const { area } = useParams<{ area: string }>();
@@ -19,6 +20,7 @@ const AreaExploration: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Validar área
   const validAreas: HeroArea[] = ['Bem-Estar', 'Business', 'Maestria'];
@@ -165,8 +167,19 @@ const AreaExploration: React.FC = () => {
               <h2 className="text-2xl font-bold text-foreground">
                 Jornadas Disponíveis
               </h2>
-              <div className="text-sm text-muted-foreground">
-                {filteredJourneys.length} jornadas encontradas
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImportDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Importar Jornadas
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {filteredJourneys.length} jornadas encontradas
+                </div>
               </div>
             </div>
 
@@ -198,6 +211,11 @@ const AreaExploration: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <JourneyImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
     </div>
   );
 };
