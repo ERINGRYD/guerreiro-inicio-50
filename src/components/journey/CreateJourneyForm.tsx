@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Eye, Save, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -23,6 +23,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { IconSelector } from './IconSelector';
 import AttributeSelector from '@/components/attributes/AttributeSelector';
+import { JourneyImportDialog } from './JourneyImportDialog';
 
 const createJourneySchema = z.object({
   title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
@@ -46,6 +47,7 @@ export const CreateJourneyForm: React.FC = () => {
   const { addJourney } = useHero();
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Pegar área pré-selecionada do state da navegação
   const preSelectedArea = location.state?.selectedArea;
@@ -290,14 +292,23 @@ export const CreateJourneyForm: React.FC = () => {
               <p className="text-muted-foreground">Configure sua jornada de transformação</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowPreview(true)}
-            disabled={!form.formState.isValid}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowImportDialog(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Importar JSON
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPreview(true)}
+              disabled={!form.formState.isValid}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
+            </Button>
+          </div>
         </div>
 
         <Form {...form}>
@@ -670,6 +681,11 @@ export const CreateJourneyForm: React.FC = () => {
             </Tabs>
           </form>
         </Form>
+        
+        <JourneyImportDialog 
+          open={showImportDialog} 
+          onOpenChange={setShowImportDialog}
+        />
       </div>
     </div>
   );
