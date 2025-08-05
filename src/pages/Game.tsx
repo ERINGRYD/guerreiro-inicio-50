@@ -10,20 +10,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useGame } from '@/contexts/GameContext';
+import { useHero } from '@/contexts/HeroContext';
 import { toast } from '@/hooks/use-toast';
-import { Settings, Play, CheckCircle } from 'lucide-react';
+import { Settings, Play, CheckCircle, Upload, Plus } from 'lucide-react';
+import { JourneyImportDialog } from '@/components/journey/JourneyImportDialog';
 
 const Game: React.FC = () => {
   const navigate = useNavigate();
-  const { gameData } = useGame();
+  const { profile, journeys } = useHero();
+  const [importDialogOpen, setImportDialogOpen] = React.useState(false);
 
   // Verificar se precisa fazer onboarding
   useEffect(() => {
-    if (!gameData.warrior.name || !gameData.warrior.coreValue) {
+    if (!profile?.heroName || !profile?.heroClass) {
       navigate('/onboarding');
     }
-  }, [gameData.warrior, navigate]);
+  }, [profile, navigate]);
 
   const handleExploreArea = (area: string) => {
     navigate(`/area/${area.toLowerCase()}`);
@@ -86,26 +88,51 @@ const Game: React.FC = () => {
         </div>
 
         {/* Jornadas Ativas */}
-        {gameData.journeys.length > 0 && (
-          <div className="space-y-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
             <h3 className="text-2xl font-semibold text-foreground">
-              Suas Jornadas Ativas
+              Suas Jornadas
             </h3>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Importar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/criar-jornada')}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Criar
+              </Button>
+            </div>
+          </div>
+          
+          {journeys.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {gameData.journeys.map((journey) => {
-                const completedPhases = journey.phases.filter(phase => 
-                  phase.tasks.every(task => task.completed)
-                ).length;
-                const progress = journey.phases.length > 0 ? 
-                  (completedPhases / journey.phases.length) * 100 : 0;
+              {journeys.map((journey) => {
+                const completedStages = journey.stages.filter(stage => stage.completed).length;
+                const progress = journey.stages.length > 0 ? 
+                  (completedStages / journey.stages.length) * 100 : 0;
+                const isCompleted = journey.status === 'Concluída';
 
                 return (
                   <Card key={journey.id} className="hover:shadow-lg transition-all">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{journey.title}</CardTitle>
-                        <Badge variant={journey.completed ? "default" : "secondary"}>
-                          {journey.completed ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{journey.icon}</span>
+                          <CardTitle className="text-lg">{journey.title}</CardTitle>
+                        </div>
+                        <Badge variant={isCompleted ? "default" : "secondary"}>
+                          {isCompleted ? (
                             <>
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Concluída
@@ -113,7 +140,7 @@ const Game: React.FC = () => {
                           ) : (
                             <>
                               <Play className="h-3 w-3 mr-1" />
-                              Em Progresso
+                              {journey.status}
                             </>
                           )}
                         </Badge>
@@ -130,7 +157,7 @@ const Game: React.FC = () => {
                         </div>
                         <Progress value={progress} />
                         <div className="text-xs text-muted-foreground">
-                          {completedPhases} de {journey.phases.length} fases completas
+                          {completedStages} de {journey.stages.length} etapas completas
                         </div>
                       </div>
                       
@@ -147,8 +174,35 @@ const Game: React.FC = () => {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <Card className="text-center p-8">
+              <CardContent className="space-y-4">
+                <div className="text-4xl mb-4">🚀</div>
+                <h4 className="text-lg font-semibold">Comece Sua Primeira Jornada</h4>
+                <p className="text-muted-foreground">
+                  Importe jornadas prontas ou crie uma personalizada para começar
+                </p>
+                <div className="flex justify-center gap-2">
+                  <Button
+                    onClick={() => setImportDialogOpen(true)}
+                    className="flex items-center gap-2"
+                    variant="outline"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Importar Jornadas
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/criar-jornada')}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Criar Jornada
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Resumo de Progresso */}
         <ProgressSummary />
@@ -172,6 +226,11 @@ const Game: React.FC = () => {
           </p>
           <QuickNavigation />
         </div>
+        
+        <JourneyImportDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+        />
       </div>
     </Layout>
   );
