@@ -10,20 +10,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { useHero } from '@/contexts/HeroContext';
+import { useGame } from '@/contexts/GameContext';
 import { toast } from '@/hooks/use-toast';
 import { Settings, Play, CheckCircle } from 'lucide-react';
 
 const Game: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, journeys, profileLoading } = useHero();
+  const { gameData } = useGame();
 
   // Verificar se precisa fazer onboarding
   useEffect(() => {
-    if (!profile?.heroName) {
+    if (!gameData.warrior.name || !gameData.warrior.coreValue) {
       navigate('/onboarding');
     }
-  }, [profile, navigate]);
+  }, [gameData.warrior, navigate]);
 
   const handleExploreArea = (area: string) => {
     navigate(`/area/${area.toLowerCase()}`);
@@ -86,26 +86,26 @@ const Game: React.FC = () => {
         </div>
 
         {/* Jornadas Ativas */}
-        {journeys.length > 0 && (
+        {gameData.journeys.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-2xl font-semibold text-foreground">
               Suas Jornadas Ativas
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {journeys.map((journey) => {
-                const completedStages = journey.stages.filter(stage => 
-                  stage.tasks.every(task => task.completed)
+              {gameData.journeys.map((journey) => {
+                const completedPhases = journey.phases.filter(phase => 
+                  phase.tasks.every(task => task.completed)
                 ).length;
-                const progress = journey.stages.length > 0 ? 
-                  (completedStages / journey.stages.length) * 100 : 0;
+                const progress = journey.phases.length > 0 ? 
+                  (completedPhases / journey.phases.length) * 100 : 0;
 
                 return (
                   <Card key={journey.id} className="hover:shadow-lg transition-all">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{journey.title}</CardTitle>
-                        <Badge variant={journey.status === 'Concluída' ? "default" : "secondary"}>
-                          {journey.status === 'Concluída' ? (
+                        <Badge variant={journey.completed ? "default" : "secondary"}>
+                          {journey.completed ? (
                             <>
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Concluída
@@ -130,7 +130,7 @@ const Game: React.FC = () => {
                         </div>
                         <Progress value={progress} />
                         <div className="text-xs text-muted-foreground">
-                          {completedStages} de {journey.stages.length} estágios completos
+                          {completedPhases} de {journey.phases.length} fases completas
                         </div>
                       </div>
                       
