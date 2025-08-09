@@ -14,7 +14,278 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attribute_goals: {
+        Row: {
+          attribute_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          target_date: string | null
+          target_level: number
+          user_id: string
+        }
+        Insert: {
+          attribute_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          target_date?: string | null
+          target_level: number
+          user_id: string
+        }
+        Update: {
+          attribute_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          target_date?: string | null
+          target_level?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_goals_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "hero_attributes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attribute_history: {
+        Row: {
+          attribute_id: string
+          created_at: string
+          date: string
+          id: string
+          source: string | null
+          user_id: string
+          xp_gained: number
+        }
+        Insert: {
+          attribute_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          source?: string | null
+          user_id: string
+          xp_gained?: number
+        }
+        Update: {
+          attribute_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          source?: string | null
+          user_id?: string
+          xp_gained?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_history_attribute_id_fkey"
+            columns: ["attribute_id"]
+            isOneToOne: false
+            referencedRelation: "hero_attributes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          classification: string | null
+          created_at: string
+          difficulty: number | null
+          frequency: string
+          id: string
+          is_active: boolean
+          journey_id: string | null
+          name: string
+          stage_id: string | null
+          user_id: string
+        }
+        Insert: {
+          classification?: string | null
+          created_at?: string
+          difficulty?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          journey_id?: string | null
+          name: string
+          stage_id?: string | null
+          user_id: string
+        }
+        Update: {
+          classification?: string | null
+          created_at?: string
+          difficulty?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          journey_id?: string | null
+          name?: string
+          stage_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habits_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hero_attributes: {
+        Row: {
+          area: string | null
+          created_at: string
+          current_xp: number
+          id: string
+          is_custom: boolean
+          level: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          current_xp?: number
+          id?: string
+          is_custom?: boolean
+          level?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          current_xp?: number
+          id?: string
+          is_custom?: boolean
+          level?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      journeys: {
+        Row: {
+          area: string | null
+          created_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          hero_class: string | null
+          hero_name: string | null
+          id: string
+          level: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          hero_class?: string | null
+          hero_name?: string | null
+          id?: string
+          level?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          hero_class?: string | null
+          hero_name?: string | null
+          id?: string
+          level?: number
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          due_date: string | null
+          id: string
+          journey_id: string | null
+          priority: number | null
+          stage_id: string | null
+          start_date: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          journey_id?: string | null
+          priority?: number | null
+          stage_id?: string | null
+          start_date?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          journey_id?: string | null
+          priority?: number | null
+          stage_id?: string | null
+          start_date?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

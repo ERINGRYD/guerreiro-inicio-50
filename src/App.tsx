@@ -18,6 +18,8 @@ import HeroJourneyManagement from "./pages/HeroJourneyManagement";
 import DailyAgenda from "./pages/DailyAgenda";
 import Rewards from "./pages/Rewards";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -32,16 +34,17 @@ const App = () => (
           <InstallPWA />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/jogo" element={<Game />} />
-              <Route path="/perfil" element={<Profile />} />
-              <Route path="/agenda" element={<DailyAgenda />} />
-              <Route path="/area/:area" element={<AreaExploration />} />
-              <Route path="/criar-jornada" element={<CreateJourney />} />
-              <Route path="/jornada/:journeyId" element={<JourneyManagement />} />
-              <Route path="/hero-jornada/:journeyId" element={<HeroJourneyManagement />} />
-              <Route path="/recompensas" element={<Rewards />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+              <Route path="/jogo" element={<ProtectedRoute><Game /></ProtectedRoute>} />
+              <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/agenda" element={<ProtectedRoute><DailyAgenda /></ProtectedRoute>} />
+              <Route path="/area/:area" element={<ProtectedRoute><AreaExploration /></ProtectedRoute>} />
+              <Route path="/criar-jornada" element={<ProtectedRoute><CreateJourney /></ProtectedRoute>} />
+              <Route path="/jornada/:journeyId" element={<ProtectedRoute><JourneyManagement /></ProtectedRoute>} />
+              <Route path="/hero-jornada/:journeyId" element={<ProtectedRoute><HeroJourneyManagement /></ProtectedRoute>} />
+              <Route path="/recompensas" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
