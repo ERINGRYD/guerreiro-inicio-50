@@ -1,11 +1,19 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useHeroProfile, useJourneys, useHeroStats } from '@/hooks/useHeroDatabase';
+import { useSupabaseProfile } from '@/hooks/useSupabaseProfile';
+import { useSupabaseJourneys } from '@/hooks/useSupabaseJourneys';
+import { useSupabaseTasks } from '@/hooks/useSupabaseTasks';
+import { useSupabaseHabits } from '@/hooks/useSupabaseHabits';
 import { HeroProfile, Journey, HeroStats, HERO_AREAS, Task } from '@/types/hero';
 import { Habit, HabitFormData, HabitCompletion } from '@/types/habit';
-import { useHabits } from '@/hooks/useHabitDatabase';
 import { useAttributeSystem } from '@/hooks/useAttributeSystem';
 import { ATTRIBUTE_XP_REWARDS } from '@/types/attribute';
-import { generateUniqueStageId } from '@/lib/stageIdMigration';
+import { 
+  adaptSupabaseProfile, 
+  adaptSupabaseJourney, 
+  adaptSupabaseTask, 
+  adaptSupabaseHabit,
+  mockHeroStats 
+} from '@/types/supabase-adapters';
 
 interface HeroContextType {
   // Profile
@@ -47,64 +55,30 @@ interface HeroContextType {
 const HeroContext = createContext<HeroContextType | null>(null);
 
 export const HeroProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  console.log('HeroProvider - Inicializando...');
+  console.log('HeroProvider - Inicializando com Supabase...');
   
-  // Use hooks with improved error handling
-  let profileHook, journeysHook, statsHook, habitsHook, attributeSystem;
-  
-  try {
-    profileHook = useHeroProfile();
-    journeysHook = useJourneys();
-    statsHook = useHeroStats();
-    habitsHook = useHabits();
-    attributeSystem = useAttributeSystem();
+  // Use Supabase hooks
+  const profileHook = useSupabaseProfile();
+  const journeysHook = useSupabaseJourneys();
+  const tasksHook = useSupabaseTasks();
+  const habitsHook = useSupabaseHabits();
+  const attributeSystem = useAttributeSystem();
 
-    console.log('HeroProvider - Hooks carregados:', {
-      profile: !!profileHook.profile,
-      profileLoading: profileHook.loading,
-      journeys: journeysHook.journeys.length,
-      journeysLoading: journeysHook.loading,
-      stats: !!statsHook.stats,
-      statsLoading: statsHook.loading,
-      attributes: attributeSystem.attributes.length
-    });
-  } catch (error) {
-    console.error('HeroProvider - Erro crítico ao inicializar hooks:', error);
-    
-    // Provide fallback empty context to prevent complete crash
-    const fallbackValue: HeroContextType = {
-      profile: null,
-      profileLoading: false,
-      updateProfile: async () => {},
-      addXP: async () => {},
-      journeys: [],
-      journeysLoading: false,
-      addJourney: async () => undefined,
-      updateJourney: async () => {},
-      deleteJourney: async () => {},
-      addTaskToStage: async () => {},
-      createHabit: async () => {},
-      updateHabit: async () => {},
-      toggleHabitCompletion: async () => {},
-      updateSubHabit: async () => {},
-      stats: null,
-      statsLoading: false,
-      refreshStats: async () => {},
-      areas: HERO_AREAS,
-      getJourneysByArea: () => [],
-      getAreaProgress: () => ({ completed: 0, total: 0, percentage: 0 }),
-      getHabitsForStage: async () => []
-    };
-    
-    return (
-      <HeroContext.Provider value={fallbackValue}>
-        {children}
-      </HeroContext.Provider>
-    );
-  }
+  console.log('HeroProvider - Hooks carregados:', {
+    profile: !!profileHook.profile,
+    profileLoading: profileHook.loading,
+    journeys: journeysHook.journeys.length,
+    journeysLoading: journeysHook.loading,
+    tasks: tasksHook.tasks.length,
+    tasksLoading: tasksHook.loading,
+    habits: habitsHook.habits.length,
+    habitsLoading: habitsHook.loading
+  });
 
   const getJourneysByArea = (area: keyof typeof HERO_AREAS): Journey[] => {
-    return journeysHook.journeys.filter(journey => journey.area === area);
+    return journeysHook.journeys
+      .filter(journey => journey.area === area)
+      .map(adaptSupabaseJourney);
   };
 
   const getAreaProgress = (area: keyof typeof HERO_AREAS) => {
@@ -117,85 +91,30 @@ export const HeroProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const getHabitsForStage = async (stageId: string, journeyId?: string): Promise<Habit[]> => {
-    try {
-      console.log('HeroContext - getHabitsForStage chamado para stage:', stageId, 'journey:', journeyId);
-      
-      const { db } = await import('@/lib/database');
-      const allHabits = await db.habits.toArray();
-      
-      const filteredHabits = allHabits.filter(habit => {
-        const stageMatch = habit.stageId === stageId;
-        const journeyMatch = !journeyId || habit.journeyId?.toString() === journeyId?.toString();
-        const isActive = habit.isActive;
-        
-        console.log(`HeroContext - Verificando hábito ${habit.name}:`, {
-          stageMatch,
-          journeyMatch,
-          isActive,
-          habitStageId: habit.stageId,
-          habitJourneyId: habit.journeyId
-        });
-        
-        return stageMatch && journeyMatch && isActive;
-      });
-      
-      console.log(`HeroContext - Hábitos encontrados para stage ${stageId}:`, filteredHabits.length);
-      return filteredHabits;
-    } catch (error) {
-      console.error('HeroContext - Erro ao carregar hábitos para stage:', error);
-      return [];
-    }
+    return habitsHook.habits
+      .filter(habit => {
+        const stageMatch = habit.stage_id === stageId;
+        const journeyMatch = !journeyId || habit.journey_id === journeyId;
+        return stageMatch && journeyMatch && habit.is_active;
+      })
+      .map(adaptSupabaseHabit);
   };
 
   const addTaskToStage = async (journeyId: number, stageId: string, task: Omit<Task, 'id' | 'createdAt'>) => {
     try {
-      const journey = journeysHook.journeys.find(j => j.id === journeyId);
-      if (!journey) throw new Error('Jornada não encontrada');
-
-      // Gerar ID único para a tarefa
-      const taskId = Date.now() + Math.random();
-      const newTask: Task = {
-        ...task,
-        id: taskId,
-        stageId,
-        createdAt: new Date().toISOString()
-      };
-
-      // Atualizar a jornada com a nova tarefa
-      const updatedStages = journey.stages.map(stage => {
-        if (stage.id === stageId) {
-          return {
-            ...stage,
-            tasks: [...stage.tasks, newTask]
-          };
-        }
-        return stage;
+      const newTask = await tasksHook.createTask({
+        stage_id: stageId,
+        journey_id: journeyId.toString(),
+        title: task.title,
+        completed: false,
+        priority: (task.priority as any) || 1,
+        start_date: task.startDate || null,
+        due_date: task.dueDate || null
       });
 
-      // Salvar na jornada
-      await journeysHook.updateJourney(journeyId, { 
-        stages: updatedStages,
-        updatedAt: new Date().toISOString()
-      });
-
-      // IMPORTANTE: Salvar também na tabela tasks para aparecer na agenda
-      const { db } = await import('@/lib/database');
-      const taskForDb = {
-        ...newTask,
-        journeyId: journeyId // Adicionar journeyId para filtros
-      };
-      
-      await db.tasks.add(taskForDb);
-      console.log('Tarefa salva tanto na jornada quanto na tabela tasks');
-
-      // Add attribute XP for task creation
-      const xpAmount = ATTRIBUTE_XP_REWARDS.task[task.priority];
-      await attributeSystem.addAttributeXPForJourney(
-        journey.title,
-        Math.floor(xpAmount / 2), // Half XP for creating, full XP for completing
-        'task',
-        String(taskId)
-      );
+      if (newTask && profileHook.profile) {
+        await profileHook.addXP(10);
+      }
     } catch (error) {
       console.error('Erro ao adicionar tarefa:', error);
       throw error;
@@ -204,118 +123,92 @@ export const HeroProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const createHabit = async (habitData: HabitFormData) => {
     try {
-      console.log('HeroContext - Criando hábito (global):', habitData);
-      
-      // Garantir que o journeyId seja uma string
-      const habitDataWithStringIds = {
-        ...habitData,
-        journeyId: habitData.journeyId?.toString(),
-        stageId: habitData.stageId
-      };
-      
-      await habitsHook.createHabit(habitDataWithStringIds);
-      
-      // Add XP for habit creation
-      await profileHook.addXP(10);
-      
-      // Add attribute XP if habit is linked to a journey
-      if (habitData.journeyId) {
-        const journey = journeysHook.journeys.find(j => j.id === Number(habitData.journeyId));
-        if (journey) {
-          const xpAmount = ATTRIBUTE_XP_REWARDS.habit[habitData.difficulty];
-          await attributeSystem.addAttributeXPForJourney(
-            journey.title,
-            Math.floor(xpAmount / 2), // Half XP for creating
-            'habit',
-            habitData.name
-          );
-        }
+      const newHabit = await habitsHook.createHabit({
+        name: habitData.name,
+        stage_id: habitData.stageId || null,
+        journey_id: habitData.journeyId?.toString() || null,
+        frequency: habitData.frequency,
+        difficulty: (habitData.difficulty as any) || 1,
+        classification: habitData.classification || null,
+        is_active: true
+      });
+
+      if (newHabit && profileHook.profile) {
+        await profileHook.addXP(15);
       }
-      
-      console.log('HeroContext - Hábito criado com sucesso (global)');
     } catch (error) {
-      console.error('HeroContext - Erro ao criar hábito (global):', error);
+      console.error('Erro ao criar hábito:', error);
       throw error;
     }
   };
 
   const updateHabit = async (habitId: string, updates: Partial<Habit>) => {
     try {
-      console.log('HeroContext - Atualizando hábito (global):', habitId, updates);
-      
-      await habitsHook.updateHabit(habitId, updates);
-      
-      console.log('HeroContext - Hábito atualizado com sucesso (global)');
+      await habitsHook.updateHabit(habitId, {
+        name: updates.name,
+        frequency: updates.frequency,
+        difficulty: (updates.difficulty as any),
+        classification: updates.classification,
+        is_active: updates.isActive
+      });
     } catch (error) {
-      console.error('HeroContext - Erro ao atualizar hábito (global):', error);
+      console.error('Erro ao atualizar hábito:', error);
       throw error;
     }
   };
 
   const toggleHabitCompletion = async (habitId: string, completion: Omit<HabitCompletion, 'date'>) => {
-    try {
-      console.log('HeroContext - Toggle habit completion (global):', habitId, completion);
-      
-      await habitsHook.toggleHabitCompletion(habitId, completion);
-      
-      // Add XP if completing
-      if (completion.completed) {
-        // Find the habit to get XP and journey info
-        const { db } = await import('@/lib/database');
-        const habit = await db.habits.get(habitId);
-        if (habit) {
-          await profileHook.addXP(habit.xpPerCompletion);
-          
-          // Add attribute XP if linked to journey
-          if (habit.journeyId) {
-            const journey = journeysHook.journeys.find(j => j.id === Number(habit.journeyId));
-            if (journey) {
-              const xpAmount = ATTRIBUTE_XP_REWARDS.habit[habit.difficulty];
-              await attributeSystem.addAttributeXPForJourney(
-                journey.title,
-                xpAmount,
-                'habit',
-                habitId
-              );
-            }
-          }
-        }
-      }
-      
-      console.log('HeroContext - Conclusão do hábito atualizada com sucesso (global)');
-    } catch (error) {
-      console.error('HeroContext - Erro ao alternar conclusão do hábito (global):', error);
-      throw error;
+    // For now, just update the habit's completion status
+    // This will need to be enhanced with a separate completions table
+    console.log('Toggle habit completion:', habitId, completion);
+    
+    if (completion.completed && profileHook.profile) {
+      await profileHook.addXP(5);
     }
   };
 
   const updateSubHabit = async (habitId: string, subHabitId: string, completed: boolean) => {
-    try {
-      console.log('HeroContext - Atualizando sub-hábito (global):', habitId, subHabitId, completed);
-      
-      await habitsHook.updateSubHabit(habitId, subHabitId, completed);
-      
-      console.log('HeroContext - Sub-hábito atualizado com sucesso (global)');
-    } catch (error) {
-      console.error('HeroContext - Erro ao atualizar sub-hábito (global):', error);
-      throw error;
-    }
+    // Sub-habits functionality will be added later
+    console.log('Update sub-habit:', habitId, subHabitId, completed);
   };
 
   // Create context value
   const contextValue: HeroContextType = {
     // Profile
-    profile: profileHook.profile,
+    profile: profileHook.profile ? adaptSupabaseProfile(profileHook.profile) : null,
     profileLoading: profileHook.loading,
-    updateProfile: profileHook.updateProfile,
+    updateProfile: async (updates: Partial<HeroProfile>) => {
+      await profileHook.updateProfile({
+        hero_name: updates.heroName,
+        hero_class: updates.heroClass,
+        avatar: updates.avatar,
+        level: updates.level,
+        total_xp: updates.totalXp
+      });
+    },
     addXP: profileHook.addXP,
     
     // Journeys
-    journeys: journeysHook.journeys,
+    journeys: journeysHook.journeys.map(adaptSupabaseJourney),
     journeysLoading: journeysHook.loading,
-    addJourney: journeysHook.addJourney,
-    updateJourney: journeysHook.updateJourney,
-    deleteJourney: journeysHook.deleteJourney,
+    addJourney: async (journey: Omit<Journey, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const result = await journeysHook.createJourney({
+        title: journey.title,
+        area: journey.area,
+        status: journey.status
+      });
+      return result ? adaptSupabaseJourney(result) : undefined;
+    },
+    updateJourney: async (id: number, updates: Partial<Journey>) => {
+      await journeysHook.updateJourney(id.toString(), {
+        title: updates.title,
+        area: updates.area,
+        status: updates.status
+      });
+    },
+    deleteJourney: async (id: number) => {
+      await journeysHook.deleteJourney(id.toString());
+    },
     
     // Tasks
     addTaskToStage,
@@ -327,9 +220,11 @@ export const HeroProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     updateSubHabit,
     
     // Stats
-    stats: statsHook.stats,
-    statsLoading: statsHook.loading,
-    refreshStats: statsHook.refreshStats,
+    stats: mockHeroStats(),
+    statsLoading: false,
+    refreshStats: async () => {
+      // Stats refresh logic will be implemented later
+    },
     
     // Areas
     areas: HERO_AREAS,
@@ -339,6 +234,7 @@ export const HeroProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     getAreaProgress,
     getHabitsForStage
   };
+
 
   console.log('HeroContext - Valor do contexto criado:', contextValue);
 
