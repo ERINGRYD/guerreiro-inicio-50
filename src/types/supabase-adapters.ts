@@ -64,10 +64,9 @@ export const adaptSupabaseHabit = (habit: SupabaseHabit): Habit => ({
   completions: [], // Empty array for now
   subHabits: [], // Empty array for now
   psychology: {
-    intrinsicMotivation: 50,
-    extrinsicMotivation: 50,
-    selfEfficacy: 50,
-    satisfactionLevel: 50
+    trigger: '',
+    reward: '',
+    objective: ''
   },
   streak: {
     current: 0,
@@ -76,10 +75,9 @@ export const adaptSupabaseHabit = (habit: SupabaseHabit): Habit => ({
   },
   stats: {
     totalCompletions: 0,
-    averagePerWeek: 0,
     successRate: 0,
     totalTimeInvested: 0,
-    consistencyScore: 0
+    consistency: 0
   }
 });
 
